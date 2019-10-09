@@ -140,6 +140,13 @@ class Calendar(Schedule):
             return m.group(1), m.group(2), "PLAYOFF", m.group(3), ""
         raise ValueError()
 
+    def notes(self):
+        record = self.record()
+        for game in self.games:
+            if len(game.note):
+                print("{} -- {} -- {}".format(game.key, record[game.key], game.note))
+          
+
 
 if __name__ == '__main__':
     
@@ -147,6 +154,7 @@ if __name__ == '__main__':
     parser.add_argument('--league', type=str, default='X', help="League A, B, C for the {} division".format(DIVISION))
     parser.add_argument('--save', action='store_true', default=False, help='Save the schedule to a game record')
     parser.add_argument('--compare', action='store_true', default=False, help='Compare the schedule to the saved game record')
+    parser.add_argument('--notes', action='store_true', default=False, help='show games with notes')
     args = parser.parse_args()
 
     VALID_LEAGUE_ARGS = ['A', 'B', 'C']
@@ -161,7 +169,9 @@ if __name__ == '__main__':
         print("Unable to load calendar ({})".format(e))
         sys.exit(1)
 
-    if not args.compare:
+    if args.notes:
+        calendar.notes()
+    elif not args.compare:
         calendar.print()
         if args.save:
             calendar.save()
