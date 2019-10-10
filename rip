@@ -17,18 +17,15 @@ import re
 import requests
 import sys
 
-DIVISION = 'Atom'
 GAME_RECORD_FILENAME_PATTERN = 'record.{}'
 
-LEAGUES = {
-# Atom
-    "{} A".format(DIVISION) : { 'url' : 'http://cdn.goalline.ca/subscribe_ical.php?cal=366d5-201909-202004-3102-297', },
-    "{} B".format(DIVISION) : { 'url' : 'http://cdn.goalline.ca/subscribe_ical.php?cal=bbf31-201909-202004-57039-297', },
-    "{} C".format(DIVISION) : { 'url' : 'http://cdn.goalline.ca/subscribe_ical.php?cal=34e6c-201909-202004-13658-297', },
-# Peewee
-#    "{} A".format(DIVISION) : { 'url' : 'http://cdn.goalline.ca/subscribe_ical.php?cal=b254b-201909-202004-3105-297', },
-#    "{} B".format(DIVISION) : { 'url' : 'http://cdn.goalline.ca/subscribe_ical.php?cal=b7b39-201909-202004-57040-297', },
-#    "{} C".format(DIVISION) : { 'url' : 'http://cdn.goalline.ca/subscribe_ical.php?cal=584f9-201909-202004-3107-297', },
+ICALENDAR_URLS = {
+    "Atom A" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=366d5-201909-202004-3102-297', 
+    "Atom B" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=bbf31-201909-202004-57039-297',
+    "Atom C" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=34e6c-201909-202004-13658-297',
+    "Peewee A" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=b254b-201909-202004-3105-297',
+    "Peewee B" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=b7b39-201909-202004-57040-297',
+    "Peewee C" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=584f9-201909-202004-3107-297',
 }
 
 class Game():
@@ -81,17 +78,20 @@ class Schedule():
     def record(self):
         record = {}
         for game in self.games:
-            record[game.key] = "{} @ {}".format(game.away, game.home)
+            record[game.key] = "({}) {} @ {}".format(game.id, game.away, game.home)
         return record
 
     def compare(self, other):
        srecord = self.record()
        orecord = other.record()
+       print("Compare:  {} -- {}".format(self.name, other.name))
        for key in srecord.keys():
            if key not in orecord.keys():
                print("{} -- {} -- NONE".format(key, srecord[key]))
            elif srecord[key] != orecord[key]:
                print("{} -- {} -- {}".format(key, srecord[key], orecord[key]))
+       print()
+       print("Compare:  {} -- {}".format(other.name, self.name))
        for key in orecord.keys():
            if key not in srecord.keys():
                print("{} -- NONE -- {}".format(key, orecord[key]))
@@ -99,14 +99,16 @@ class Schedule():
 class GameRecord(Schedule):
     def __init__(self, league):
         Schedule.__init__(self, league)
+        self.name = "Game Record"
         with open(GAME_RECORD_FILENAME_PATTERN.format(re.sub(r"\s", '-', self.league.lower())), 'r') as fn:
             for cnt, line in enumerate(fn):
                 self.games.append(Game.fromstr(line.rstrip()))
 
 class Calendar(Schedule):
-    def __init__(self, league, tzoffset=5):
+    def __init__(self, league, url):
         Schedule.__init__(self, league)
-        response = requests.get(LEAGUES[league]['url'])
+        self.name = "Calendar"
+        response = requests.get(url)
         response.raise_for_status()
         calendar = icalendar.Calendar.from_ical(response.text)
         for component in calendar.walk():
@@ -129,10 +131,10 @@ class Calendar(Schedule):
 
     @staticmethod
     def __parseDescription(text):
-        m = re.match(r"(.+?)\s*@\s*(.+?)s*-\s*Regular\s+Season\s+GAME\s*-\s*LCMHL\s+Game\s+No.+?(\d+)\s*-\s*(.+?)\s*$", text)
+        m = re.match(r"(.+?)\s*@\s*(.+?)s*-\s*Regular\s+Season\s+GAME\s*-\s*LCMHL\s+Game\s+No\.*\s*(\d+)\D(\S.+?)\s*$", text)
         if m:
             return m.group(1), m.group(2), "REGULAR SEASON", m.group(3), m.group(4)
-        m = re.match(r"(.+?)\s*@\s*(.+?)s*-\s*Regular\s+Season\s+GAME\s*-\s*LCMHL\s+Game\s+No.+?(\d+)\s*$", text)
+        m = re.match(r"(.+?)\s*@\s*(.+?)s*-\s*Regular\s+Season\s+GAME\s*-\s*LCMHL\s+Game\s+No\.*\s*(\d+)\s*$", text)
         if m:
             return m.group(1), m.group(2), "REGULAR SEASON", m.group(3), ""
         m = re.match(r"(.+?)\s*@\s*(.+?)s*-.+GAME\s*-\s*LCMHL\s+Game\s+No.+?(\d+)\s*$", text)
@@ -151,20 +153,40 @@ class Calendar(Schedule):
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser(description="Rip and optionally compare game data from the LCMHL (goalline) website")
-    parser.add_argument('--league', type=str, default='X', help="League A, B, C for the {} division".format(DIVISION))
+    parser.add_argument('--division', type=str, default=None, help="Division [Atom, Peewee]")
+    parser.add_argument('--league', type=str, default=None, help="League [A, B, C] for the division")
+    parser.add_argument('--url', type=str, default=None, help="iCalendar url to use when division and league are unspecified")
     parser.add_argument('--save', action='store_true', default=False, help='Save the schedule to a game record')
     parser.add_argument('--compare', action='store_true', default=False, help='Compare the schedule to the saved game record')
     parser.add_argument('--notes', action='store_true', default=False, help='show games with notes')
     args = parser.parse_args()
 
-    VALID_LEAGUE_ARGS = ['A', 'B', 'C']
-    if args.league not in VALID_LEAGUE_ARGS:
-        print("Supplied league must in [{}]".format(', '.join(VALID_LEAGUE_ARGS)))
+    if sum([args.save, args.compare, args.notes]) > 1:
+        print("Only one of save, compare, notes is allowed")
         sys.exit(1)
-    args.league = "{} {}".format(DIVISION, args.league)
+
+    league = "Unknown"
+    if args.url:
+        if args.division or args.league:
+            print("Division and/or league cannot be specified when URL is supplied")
+            sys.exit(1)
+        if args.save or args.compare:
+            print("Cannot save or compare when a URL is provided")
+            sys.exit(1)
+        args.url = re.sub(r"webcal", 'http', args.url)
+    else:
+        if not args.division:
+            args.division = 'Atom'
+        if not args.league:
+            args.league = 'A'
+        league = "{} {}".format(args.division, args.league)
+        if league not in ICALENDAR_URLS:
+            print("No icalendar URL defined for {}".format(league))
+            sys.exit(1)
+        args.url = ICALENDAR_URLS[league]
 
     try:
-        calendar = Calendar(args.league)
+        calendar = Calendar(league, args.url)
     except Exception as e:
         print("Unable to load calendar ({})".format(e))
         sys.exit(1)
@@ -176,7 +198,7 @@ if __name__ == '__main__':
         if args.save:
             calendar.save()
     else:
-        record = GameRecord(args.league)
+        record = GameRecord(league)
         calendar.compare(record)
 
     sys.exit(0)
