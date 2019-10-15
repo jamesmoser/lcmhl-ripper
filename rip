@@ -124,8 +124,8 @@ class Calendar(Schedule):
                     (component.get('dtstart').dt.replace(tzinfo=datetime.timezone.utc).astimezone(tz=None)).strftime("%I:%M %p"),
                     (component.get('location').split(','))[0],
                     id,
-                    home,
-                    away,
+                    home.rstrip(),
+                    away.rstrip(),
                     note
                 ))
 
