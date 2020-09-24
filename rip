@@ -131,7 +131,7 @@ class Calendar(Schedule):
 
     @staticmethod
     def __parseDescription(text):
-        m = re.match(r"(.+?)\s*@\s*(.+?)s*-\s*Regular\s+Season\s+GAME\s*-\s*LCMHL\s+Game\s+No\.*\s*(\d+)\D(\S.+?)\s*$", text)
+        m = re.match(r"(.+?)\s*@\s*(.+?)s*-\s*Regular\s+Season\s+GAME\s*-\s*LCMHL\s+Game\s+No\.*\s*(\d+)\D\s*(\S.+?)\s*$", text)
         if m:
             return m.group(1), m.group(2), "REGULAR SEASON", m.group(3), m.group(4)
         m = re.match(r"(.+?)\s*@\s*(.+?)s*-\s*Regular\s+Season\s+GAME\s*-\s*LCMHL\s+Game\s+No\.*\s*(\d+)\s*$", text)
@@ -140,6 +140,7 @@ class Calendar(Schedule):
         m = re.match(r"(.+?)\s*@\s*(.+?)s*-.+GAME\s*-\s*LCMHL\s+Game\s+No.+?(\d+)\s*$", text)
         if m:
             return m.group(1), m.group(2), "PLAYOFF", m.group(3), ""
+        print("ERROR -- Unable to parse: {}".format(text))
         raise ValueError()
 
     def notes(self):
