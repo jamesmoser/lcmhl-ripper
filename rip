@@ -20,12 +20,19 @@ import sys
 GAME_RECORD_FILENAME_PATTERN = 'record.{}'
 
 ICALENDAR_URLS = {
-    "Atom A" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=366d5-201909-202004-3102-297', 
-    "Atom B" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=bbf31-201909-202004-57039-297',
-    "Atom C" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=34e6c-201909-202004-13658-297',
-    "Peewee A" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=b254b-201909-202004-3105-297',
-    "Peewee B" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=b7b39-201909-202004-57040-297',
-    "Peewee C" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=584f9-201909-202004-3107-297',
+    "Novice A" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=fe5cf-202109-202206-3099-297',
+    "Novice B" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=eda7f-202109-202206-57038-297',
+    "Novice C" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=51bbf-202109-202206-3101-297',
+    "Atom A"   : 'http://cdn.goalline.ca/subscribe_ical.php?cal=f7795-202109-202206-3102-297',
+    "Atom B"   : 'http://cdn.goalline.ca/subscribe_ical.php?cal=a8e03-202109-202206-57039-297',
+    "Atom C"   : 'http://cdn.goalline.ca/subscribe_ical.php?cal=b0762-202109-202206-13658-297',
+    "Peewee A" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=e827b-202109-202206-3105-297',
+    "Peewee B" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=15006-202109-202206-57040-297',
+    "Peewee C" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=47188-202109-202206-3107-297',
+    "Bantam A" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=e5765-202109-202206-3108-297',
+    "Bantam B" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=868ee-202109-202206-57041-297',
+    "Midget A" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=3eaa0-202109-202206-67167-297',
+    "Midget B" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=49783-202109-202206-57042-297'
 }
 
 class Game():
@@ -131,16 +138,15 @@ class Calendar(Schedule):
 
     @staticmethod
     def __parseDescription(text):
-        m = re.match(r"(.+?)\s*@\s*(.+?)s*-\s*Regular\s+Season\s+GAME\s*-\s*LCMHL\s+Game\s+No\.*\s*(\d+)\D\s*(\S.+?)\s*$", text)
-        if m:
-            return m.group(1), m.group(2), "REGULAR SEASON", m.group(3), m.group(4)
-        m = re.match(r"(.+?)\s*@\s*(.+?)s*-\s*Regular\s+Season\s+GAME\s*-\s*LCMHL\s+Game\s+No\.*\s*(\d+)\s*$", text)
+        m = re.match(r"(.+?)\s*@\s*(.+?)s*-\s*regular.+?no\.*\s*(\d+)", text, re.I)
         if m:
             return m.group(1), m.group(2), "REGULAR SEASON", m.group(3), ""
-        m = re.match(r"(.+?)\s*@\s*(.+?)s*-.+GAME\s*-\s*LCMHL\s+Game\s+No.+?(\d+)\s*$", text)
+        m = re.match(r"(.+?)\s*@\s*(.+?)s*-\s*regular", text, re.I)
         if m:
-            return m.group(1), m.group(2), "PLAYOFF", m.group(3), ""
+            return m.group(1), m.group(2), "REGULAR SEASON", "?", ""
+        print("")
         print("ERROR -- Unable to parse: {}".format(text))
+        print("")
         raise ValueError()
 
     def notes(self):
@@ -154,7 +160,7 @@ class Calendar(Schedule):
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser(description="Rip and optionally compare game data from the LCMHL (goalline) website")
-    parser.add_argument('--division', type=str, default=None, help="Division [Atom, Peewee]")
+    parser.add_argument('--division', type=str, default=None, help="Division [Atom, Peewee, Bantam]")
     parser.add_argument('--league', type=str, default=None, help="League [A, B, C] for the division")
     parser.add_argument('--url', type=str, default=None, help="iCalendar url to use when division and league are unspecified")
     parser.add_argument('--save', action='store_true', default=False, help='Save the schedule to a game record')
