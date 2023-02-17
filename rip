@@ -19,6 +19,8 @@ import sys
 
 GAME_RECORD_FILENAME_PATTERN = 'record.{}'
 
+# iCalendar links for 2022-23 playing season
+#
 ICALENDAR_URLS = {
     "Novice A" : 'https://cdn.goalline.ca/subscribe_ical.php?cal=557df-202210-202303-3099-297',
     "Novice B" : 'https://cdn.goalline.ca/subscribe_ical.php?cal=bf97f-202210-202303-57038-297',
@@ -136,7 +138,9 @@ class Calendar(Schedule):
                     note
                 ))
 
-#Almonte Pakenham B1 @ Almonte Pakenham B2 - 2023 Playoffs - Competitive - Round 1 GAME  - LCMHL Game No. 3
+    # This method needs to be updated from year to year depending on the LCMHL statistician
+    # Make sure to check the parsing errors when ripping a division calendar
+    #
     @staticmethod
     def __parseDescription(text):
         m = re.match(r"(.+?)\s*@\s*(.+?)s*-.*regular.+?no\.*\s*(\d+)", text, re.I)
@@ -168,7 +172,7 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser(description="Rip and optionally compare game data from the LCMHL (goalline) website")
     parser.add_argument('--division', type=str, default=None, help="Division [Atom, Peewee, Bantam]")
-    parser.add_argument('--league', type=str, default=None, help="League [A, B, C] for the division")
+    parser.add_argument('--league', type=str, default=None, help="League [A, B, C] for the division, use X to get all")
     parser.add_argument('--url', type=str, default=None, help="iCalendar url to use when division and league are unspecified")
     parser.add_argument('--save', action='store_true', default=False, help='Save the schedule to a game record')
     parser.add_argument('--compare', action='store_true', default=False, help='Compare the schedule to the saved game record')
@@ -179,8 +183,9 @@ if __name__ == '__main__':
         print("Only one of save, compare, notes is allowed")
         sys.exit(1)
 
-    # special mode to speed up download of games
-
+    # New mode to speed up game updates into the Ice Allocations spreadsheet
+    # Use 'X' for league to download all leagues defined for the division
+    #
     if args.league == 'X':
         leagues = [ 'A', 'B', 'C']
         if args.division == 'Midget' or args.division == 'Bantam':
@@ -199,8 +204,8 @@ if __name__ == '__main__':
                 sys.exit(1)
         sys.exit(0)
 
-    # legacy modes
-
+    # Legacy modes, probably no longer important for anything
+    #
     league = "Unknown"
     if args.url:
         if args.division or args.league:
