@@ -20,19 +20,19 @@ import sys
 GAME_RECORD_FILENAME_PATTERN = 'record.{}'
 
 ICALENDAR_URLS = {
-    "Novice A" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=fe5cf-202109-202206-3099-297',
-    "Novice B" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=eda7f-202109-202206-57038-297',
-    "Novice C" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=51bbf-202109-202206-3101-297',
-    "Atom A"   : 'http://cdn.goalline.ca/subscribe_ical.php?cal=f7795-202109-202206-3102-297',
-    "Atom B"   : 'http://cdn.goalline.ca/subscribe_ical.php?cal=a8e03-202109-202206-57039-297',
-    "Atom C"   : 'http://cdn.goalline.ca/subscribe_ical.php?cal=b0762-202109-202206-13658-297',
-    "Peewee A" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=e827b-202109-202206-3105-297',
-    "Peewee B" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=15006-202109-202206-57040-297',
-    "Peewee C" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=47188-202109-202206-3107-297',
-    "Bantam A" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=e5765-202109-202206-3108-297',
-    "Bantam B" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=868ee-202109-202206-57041-297',
-    "Midget A" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=3eaa0-202109-202206-67167-297',
-    "Midget B" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=49783-202109-202206-57042-297'
+    "Novice A" : 'https://cdn.goalline.ca/subscribe_ical.php?cal=557df-202210-202303-3099-297',
+    "Novice B" : 'https://cdn.goalline.ca/subscribe_ical.php?cal=bf97f-202210-202303-57038-297',
+    "Novice C" : 'https://cdn.goalline.ca/subscribe_ical.php?cal=f4436-202210-202303-3101-297',
+    "Atom A"   : 'https://cdn.goalline.ca/subscribe_ical.php?cal=35a80-202210-202303-3102-297',
+    "Atom B"   : 'https://cdn.goalline.ca/subscribe_ical.php?cal=25ae3-202210-202303-57039-297',
+    "Atom C"   : 'https://cdn.goalline.ca/subscribe_ical.php?cal=01567-202210-202303-13658-297',
+    "Peewee A" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=e6e24-202210-202303-3105-297',
+    "Peewee B" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=1cbd6-202210-202303-57040-297',
+    "Peewee C" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=48080-202210-202303-3107-297',
+    "Bantam A" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=1415f-202210-202303-3108-297',
+    "Bantam B" : 'http://cdn.goalline.ca/subscribe_ical.php?cal=e0fc1-202210-202303-57041-297',
+    "Midget A" : 'https://cdn.goalline.ca/subscribe_ical.php?cal=1a87b-202210-202303-67167-297',
+    "Midget B" : 'https://cdn.goalline.ca/subscribe_ical.php?cal=77e2f-202210-202303-57042-297'
 }
 
 class Game():
@@ -136,14 +136,21 @@ class Calendar(Schedule):
                     note
                 ))
 
+#Almonte Pakenham B1 @ Almonte Pakenham B2 - 2023 Playoffs - Competitive - Round 1 GAME  - LCMHL Game No. 3
     @staticmethod
     def __parseDescription(text):
-        m = re.match(r"(.+?)\s*@\s*(.+?)s*-\s*regular.+?no\.*\s*(\d+)", text, re.I)
+        m = re.match(r"(.+?)\s*@\s*(.+?)s*-.*regular.+?no\.*\s*(\d+)", text, re.I)
         if m:
             return m.group(1), m.group(2), "REGULAR SEASON", m.group(3), ""
-        m = re.match(r"(.+?)\s*@\s*(.+?)s*-\s*regular", text, re.I)
+        m = re.match(r"(.+?)\s*@\s*(.+?)s*-.*regular", text, re.I)
         if m:
             return m.group(1), m.group(2), "REGULAR SEASON", "?", ""
+        m = re.match(r"(.+?)\s*@\s*(.+?)s*-.*playoff.+?no\.*\s*(\d+)", text, re.I)
+        if m:
+            return m.group(1), m.group(2), "PLAYOFF", m.group(3), ""
+        m = re.match(r"(.+?)\s*@\s*(.+?)s*-.*playoff", text, re.I)
+        if m:
+            return m.group(1), m.group(2), "PLAYOFF", "?", ""
         print("")
         print("ERROR -- Unable to parse: {}".format(text))
         print("")
@@ -171,6 +178,28 @@ if __name__ == '__main__':
     if sum([args.save, args.compare, args.notes]) > 1:
         print("Only one of save, compare, notes is allowed")
         sys.exit(1)
+
+    # special mode to speed up download of games
+
+    if args.league == 'X':
+        leagues = [ 'A', 'B', 'C']
+        if args.division == 'Midget' or args.division == 'Bantam':
+            leagues = [ 'A', 'B' ]
+        for league in leagues:
+            cal = "{} {}".format(args.division, league)
+            if cal not in ICALENDAR_URLS: 
+                print("No icalendar URL defined for {}".format(cal))
+                sys.exit(1)
+            url = ICALENDAR_URLS[cal]
+            try:
+                calendar = Calendar(cal, url)
+                calendar.print()
+            except Exception as e:
+                print("Unable to load calendar ({})".format(e))
+                sys.exit(1)
+        sys.exit(0)
+
+    # legacy modes
 
     league = "Unknown"
     if args.url:
